@@ -4,132 +4,179 @@ import { redirect } from "react-router"
 
 
 export const loginWithGoogle = async () => {
-    try{
-        account.createOAuth2Session(OAuthProvider.Google)
-    } catch (e){
-        console.log("loginWithGoogle:", e)
+     try {
+      account.createOAuth2Session({
+        provider: OAuthProvider.Google,
+        success: "http://localhost:5173/dashboard",
+        failure: "http://localhost:5173/sign-up",
+        scopes: [
+          "openid",
+          "https://www.googleapis.com/auth/userinfo.email",
+          "https://www.googleapis.com/auth/userinfo.profile",
+        ], 
+      });
+    } catch (err) {
+      console.error("Google login failed:", err);
     }
 }
 
-export const getUser = async () => {
-    try{
-        const user = await account.get();
 
-        if(!user) return redirect("/sign-in");
-
-        const { documents } = await database.listDocuments(
-            appwriteConfig.databaseId,
-            appwriteConfig.userCollectionId,
-            [
-                Query.equal("accountId", user.$id),
-                Query.select(["name", "email", "imageUrl", "joinedAt", "accountId"])
-            ]
-        )
-    } catch (e){
-        console.log(e)
-    }
-}
 
 export const logoutUser = async () => {
-    try{
-        await account.deleteSession("current")
-        return true;
-    } catch (e){
-        console.log("logout user error",e)
+  try {
+    await account.deleteSession("current");
+    await new Promise(res => setTimeout(res, 300));
+    const user = await account.get().catch(() => null);
+    if (!user) {
+      console.warn("Session not ready yet — retrying...");
+      // redirect back to login or refresh
     }
-}
+    console.log("✅ User logged out");
+    window.location.href = "/sign-in";
+  } catch (e) {
+    console.error("logout user error:", e);
+  }
+};
 
 
-export const getGooglePic = async () => {
+export const getUser = async (userId: string) => {
     try{
-        const session = await account.getSession("current")
+        const user = await account.get();
+        
+        if(!user) return redirect("/sign-in"); //need to change back to "/sign-in"
+        const userId = user.$id
 
-        const oAuthToken = session.providerAccessToken;
+        const res = await database.listDocuments({
+            databaseId: appwriteConfig.databaseId,
+            collectionId: appwriteConfig.userCollectionId,
+            queries: [Query.equal("accountId", userId)],
+        })
 
-        if(!oAuthToken){
-            console.log("No Auth Token Available")
-            return null;
-        }
-
-        const response = await fetch(
-            "https://people.googleapis.com/v1/people/me?personFields=photos",
-            {
-                headers: {
-                    Authorization: `Bearer ${oAuthToken}`
-                }
-            }
-        );
-
-        if(!response.ok){
-            console.log("failed to fetch profile photo")
-            return null;
-        }
-
-        const data = await response.json();
-        console.log("data:", data)
-
-        const photoUrl = data.photos && data.photos.length > 0
-        ? data.photos[0].url
-        : null;
-
-        return photoUrl
+        return res.documents.length > 0 ? res.documents[0] : null;
     } catch (e){
         console.log(e)
     }
 }
+
+
+export const getGooglePic = async (): Promise<string | null> => {
+  try {
+    const session = await account.getSession("current");
+    const oAuthToken = session?.providerAccessToken;
+
+    if (!oAuthToken) {
+      console.log("No Auth Token Available");
+      return null;
+    }
+
+    const response = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
+      headers: { Authorization: `Bearer ${oAuthToken}` },
+    });
+
+    if (!response.ok) {
+      console.log("Failed to fetch profile photo", response);
+      return null;
+    }
+
+    const data = await response.json();
+
+    // ✅ Correct property name
+    const photoUrl = data.picture || null;
+    return photoUrl;
+  } catch (e) {
+    console.log("getGooglePic error:", e);
+    return null;
+  }
+};
 
 
 export const storageUserData = async () => {
-    try{
-        const user = await account.get();
+  try {
+    // 1️⃣ Get the currently logged-in Appwrite user
+    const user = await account.get();
+    if (!user) return null
 
-        if(!user) return null;
+    // 2️⃣ Check if this user already exists in your collection
+    const { documents } = await database.listDocuments({
+      databaseId: appwriteConfig.databaseId,
+      collectionId: appwriteConfig.userCollectionId,
+      queries: [Query.equal("accountId", user.$id)],  
+    });
 
-        const {documents} = await database.listDocuments(
-            appwriteConfig.databaseId,
-            appwriteConfig.userCollectionId,
-            [Query.equal('accountId', user.$id)]
-        )
 
-        if(documents.length > 0) return documents[0];
-
-        const imageUrl = await getGooglePic();
-
-        const newUser = await database.createDocument(
-            appwriteConfig.databaseId,
-            appwriteConfig.userCollectionId,
-            ID.unique(),
-            {
-                accountId: user.$id,
-                mail: user.email,
-                name: user.name,
-                imageUrl: imageUrl || "",
-                joinedAt: new Date().toISOString(),
-            }
-        );
-
-        return newUser;
-
-    } catch (e){
-        console.log(e)
+    if (documents.length > 0) {
+      console.log("User already exists in collection ✅");
+      return documents[0];
     }
-}
+
+    const imageUrl = await getGooglePic();
+
+    const newUser = await database.createDocument({
+      databaseId: appwriteConfig.databaseId,
+      collectionId: appwriteConfig.userCollectionId,
+      documentId: ID.unique(),
+      data: {
+        accountId: user.$id,
+        email: user.email,
+        name: user.name,
+        imageUrl: imageUrl || "",
+        $createdAt: new Date().toISOString()
+      },
+    });
+
+    console.log("✅ New user created:", newUser);
+    return newUser;
+
+  } catch (e) {
+    console.error("storageUserData error:", e);
+    return null;
+  }
+};
 
 
 export const getExistingUser = async () => {
-    try{
-        const user = await account.get();
-
-        if(!user) return null;
-
-        const {documents} = await database.listDocuments(
-            appwriteConfig.databaseId,
-            appwriteConfig.userCollectionId,
-            [Query.equal('accountId', user.$id)]
-        )
-
-        if(documents.length === 0) return null;
-    } catch (e){
-        console.log(e)
+  try {
+    // 1️⃣ Get current user session
+    const user = await account.get().catch(() => null);
+    if (!user) {
+      console.log("⚠️ No active Appwrite user session found.");
+      return null;
     }
-}
+
+    // 2️⃣ Sanity check for config values
+    if (!appwriteConfig.databaseId || !appwriteConfig.userCollectionId) {
+      throw new Error("Missing database or collection ID in config");
+    }
+
+    // 3️⃣ Query the collection for this user's record
+    const { documents } = await database.listDocuments({
+      databaseId: appwriteConfig.databaseId,
+      collectionId: appwriteConfig.userCollectionId,
+      queries: [Query.equal("accountId", user.$id)],
+    });
+
+    // 4️⃣ Return normalized result
+    if (documents.length > 0) {
+      const doc = documents[0];
+      return {
+        $id: doc.$id,
+        accountId: doc.accountId,
+        email: doc.email,
+        name: doc.name,
+        imageUrl: doc.imageUrl || "",
+        createdAt: doc.joinedAt || "",
+      };
+    }
+
+    console.log("ℹ️ No stored user record found, returning basic user info.");
+    return {
+      $id: "",
+      accountId: user.$id,
+      email: user.email,
+      name: user.name,
+    };
+  } catch (e) {
+    console.error("getExistingUser error:", e);
+    return null;
+  }
+};

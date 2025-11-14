@@ -5,16 +5,6 @@ import { loginWithGoogle } from '~/appwrite/auth'
 import { account } from '~/appwrite/client';
 
 
-// export async function clientLoader(){
-//     try{
-//         const user = await account.get();
-//         if(user.$id) return redirect('/')
-//     } catch(e){
-//         console.log("error fetching user", e)
-//     }
-// }
-
-
 export const clientLoader = async () => {
   try {
     const user = await account.get();

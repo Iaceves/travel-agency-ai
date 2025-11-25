@@ -27,16 +27,21 @@ export function parseMarkdownToJson(markdownText: string): unknown | null {
   return null;
 }
 
-export function parseTripData(jsonString: string): Trip | null {
-  try {
-    const data: Trip = JSON.parse(jsonString);
 
-    return data;
-  } catch (error) {
-    console.error("Failed to parse trip data:", error);
-    return null;
+export const parseTripData = (tripDetails: string | undefined | null) => {
+  if (!tripDetails || typeof tripDetails !== "string") {
+    console.error("parseTripData received invalid tripDetails:", tripDetails);
+    return {};
   }
-}
+
+  try {
+    return JSON.parse(tripDetails);
+  } catch (e) {
+    console.error("Failed to parse trip data:", e, tripDetails);
+    return {};
+  }
+};
+
 
 export function getFirstWord(input: string = ""): string {
   return input.trim().split(/\s+/)[0] || "";

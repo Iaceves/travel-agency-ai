@@ -1,17 +1,59 @@
 import React from 'react'
 import { Header, StatsCard, TripCard } from '../../../components'
-import { user, dashboardStats, allTrips } from '~/constants'
 import type { Route } from './+types/dashboard';
-import { getUser } from '~/appwrite/auth';
+import { getAllUsers, getUser } from '~/appwrite/auth';
+import { getTripsByTravelStyle, getUserGrowthPerDay, getUsersAndTripsStats } from '~/appwrite/dashboard';
+import { getAllTrips } from '~/appwrite/trips';
+import { parseTripData } from '~/lib/utils';
+import { Category, ChartComponent, ColumnSeries, DataLabel, Inject, Legend, SeriesCollectionDirective, SeriesDirective, SplineAreaSeries, Tooltip } from '@syncfusion/ej2-react-charts';
+import { tripXAxis, tripyAxis, userXAxis, useryAxis } from '~/constants';
 
 
-const {totalUsers, usersJoined, totalTrips, tripsCreated, userRole} = dashboardStats
 
-export const clientLoader = async () => await getUser('userId');
+
+export const clientLoader = async () => {
+    const [
+        user, 
+        dashboardStats,
+        trips,
+        userGrowth,
+        tripsByTravelStyle,
+        allUsers,
+    
+    ] = await Promise.all([
+         getUser('userId'),
+         getUsersAndTripsStats(),
+         getAllTrips(4,0),
+         getUserGrowthPerDay(),
+         getTripsByTravelStyle(),
+         getAllUsers(4,0)
+    ])
+
+    const allTrips = trips.allTrips.map(({$id, tripDetails, imageUrls}) => ({
+        id: $id,
+        ...(tripDetails ? parseTripData(tripDetails) : {}),
+        imageUrls: imageUrls ?? [],
+    }))
+
+    
+
+    const mappedUsers: UsersItineraryCount[] = allUsers.users.map((user) => ({
+        imageUrl: user.imageUrl,
+        name: user.name,
+        count: user.itineraryCount,
+        createdAt: user.$createdAt
+    }))
+    
+    return {
+        user, dashboardStats, allTrips,
+        userGrowth, tripsByTravelStyle, allUsers: mappedUsers
+    }
+}
 
 const dashboard = ({loaderData}: Route.ComponentProps) => {
 
-    const user = loaderData as User | null;
+    const user = loaderData.user as User | null;
+    const {dashboardStats, allTrips, allUsers, userGrowth, tripsByTravelStyle} = loaderData;
 
   return (
     <main className='dashboard wrapper'>
@@ -23,21 +65,21 @@ const dashboard = ({loaderData}: Route.ComponentProps) => {
             <div className='grid grid-cols-1 md:grid-cols-3 gap-6'>
                 <StatsCard
                     headerTitle="Total Users"
-                    total={totalUsers}
-                    currentMonthCount={usersJoined.currentMonth}
-                    lastMonthCount={usersJoined.lastMonth}
+                    total={dashboardStats.totalUsers}
+                    currentMonthCount={dashboardStats.usersJoined.currentMonth}
+                    lastMonthCount={dashboardStats.usersJoined.lastMonth}
                 />
                 <StatsCard
                     headerTitle="Total Trips"
-                    total={totalTrips}
-                    currentMonthCount={tripsCreated.currentMonth}
-                    lastMonthCount={tripsCreated.lastMonth}
+                    total={dashboardStats.totalTrips}
+                    currentMonthCount={dashboardStats.tripsCreated.currentMonth}
+                    lastMonthCount={dashboardStats.tripsCreated.lastMonth}
                 />
                 <StatsCard
                     headerTitle="Active Users"
-                    total={userRole.total}
-                    currentMonthCount={usersJoined.currentMonth}
-                    lastMonthCount={usersJoined.lastMonth}
+                    total={dashboardStats.userRole.total}
+                    currentMonthCount={dashboardStats.usersJoined.currentMonth}
+                    lastMonthCount={dashboardStats.usersJoined.lastMonth}
                 />
             </div>
         </section>
@@ -46,18 +88,78 @@ const dashboard = ({loaderData}: Route.ComponentProps) => {
                 Created Trips
             </h1>
             <div className='trip-grid'>
-                {allTrips.slice(0, 4).map(({id, name, imageUrls, itinerary, estimatedPrice, tags}) => (
+                {allTrips.map((trip) => (
                     <TripCard 
-                        key={id}
-                        id={id.toString()}
-                        name={name}
-                        imageUrl={imageUrls[0]}
-                        location={itinerary?.[0]?.location ?? ""}
-                        tags={tags}
-                        price={estimatedPrice}
+                        key={trip.id}
+                        id={trip.id.toString()}
+                        name={trip.name!}
+                        imageUrl={trip.imageUrls[0]}
+                        location={trip.itinerary?.[0]?.location ?? ""}
+                        tags={[trip.interests!, trip.travelStyle!]}
+                        price={trip.estimatedPrice!}
                     />
                 ))}
             </div>
+        </section>
+
+        <section className='grid grid-cols-1 lg:grid-cols-2 gap-5'>
+            <ChartComponent 
+                id="chart-1"
+                primaryXAxis={userXAxis}
+                primaryYAxis={useryAxis}
+                title="User Growth"
+                tooltip={{enable: true}}
+            >
+                <SeriesCollectionDirective>
+                    <SeriesDirective 
+                        dataSource={userGrowth}
+                        xName='day'
+                        yName='count'
+                        type='Column'
+                        name="Column"
+                        columnWidth={0.3}
+                        cornerRadius={{topLeft: 10, topRight: 10}}
+                    />
+                    <SeriesDirective 
+                        dataSource={userGrowth}
+                        xName='day'
+                        yName='count'
+                        type='SplineArea'
+                        name="Wave"
+                        fill='rgba(71, 132,238, 0.3)'
+                        border={{width: 2, color:'#4784EE'}}
+                    />
+                </SeriesCollectionDirective>
+                <Inject services={[ColumnSeries, SplineAreaSeries, 
+                    Category, DataLabel, Tooltip, Legend]} />
+            </ChartComponent>
+
+            <ChartComponent 
+                id="chart-2"
+                primaryXAxis={tripXAxis}
+                primaryYAxis={tripyAxis}
+                title="Trip Trends"
+                tooltip={{enable: true}}
+            >
+                <SeriesCollectionDirective>
+                    <SeriesDirective 
+                        dataSource={tripsByTravelStyle}
+                        xName='travelStyle'
+                        yName='count'
+                        type='Column'
+                        name="Column"
+                        columnWidth={0.3}
+                        cornerRadius={{topLeft: 10, topRight: 10}}
+                    />
+                    
+                </SeriesCollectionDirective>
+                <Inject services={[ColumnSeries, SplineAreaSeries, 
+                    Category, DataLabel, Tooltip, Legend]} />
+            </ChartComponent>
+        </section>
+
+        <section className='user-trip wrapper'>
+
         </section>
     </main>
   )

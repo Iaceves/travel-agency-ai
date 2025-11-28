@@ -25,16 +25,16 @@ const pageLayout = () => {
                     className='size-6'
                     referrerPolicy='no-referrer'
                 />
-                <span>Logout</span>
+                <span className='p-16-semibold mr-10'>Logout</span>
             </button>
         </div>
 
         <ButtonComponent 
             type="button" 
-            className="button-class !h-11 !w-full md:w-[240px] mb-5 "
+            className="mx-auto button-class !h-11 !w-[200px] md:w-[240px] mb-7 "
             onClick={() => {navigate('/dashboard')}}
-            >
-                <img src="/assets/icons/plus.svg" alt="plus" className='size-5' />
+        >
+                <img src="/assets/icons/users.svg" alt="users" className='size-5' />
                 <span className="p-16-semibold text-white">Go to Dashboard</span>
         </ButtonComponent>
     

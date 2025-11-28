@@ -31,7 +31,7 @@ const pageLayout = () => {
 
         <ButtonComponent 
             type="button" 
-            className="button-class !h-11 !w-full md:w-[240px] "
+            className="button-class !h-11 !w-full md:w-[240px] mb-5 "
             onClick={() => {navigate('/dashboard')}}
             >
                 <img src="/assets/icons/plus.svg" alt="plus" className='size-5' />

@@ -7,6 +7,7 @@ import { getAllTrips } from '~/appwrite/trips';
 import { parseTripData } from '~/lib/utils';
 import { Category, ChartComponent, ColumnSeries, DataLabel, Inject, Legend, SeriesCollectionDirective, SeriesDirective, SplineAreaSeries, Tooltip } from '@syncfusion/ej2-react-charts';
 import { tripXAxis, tripyAxis, userXAxis, useryAxis } from '~/constants';
+import { ColumnDirective, ColumnsDirective, GridComponent } from '@syncfusion/ej2-react-grids';
 
 
 
@@ -40,8 +41,7 @@ export const clientLoader = async () => {
     const mappedUsers: UsersItineraryCount[] = allUsers.users.map((user) => ({
         imageUrl: user.imageUrl,
         name: user.name,
-        count: user.itineraryCount,
-        createdAt: user.$createdAt
+        count: user.itineraryCount ?? Math.floor(Math.random() * 10)
     }))
     
     return {
@@ -50,10 +50,31 @@ export const clientLoader = async () => {
     }
 }
 
-const dashboard = ({loaderData}: Route.ComponentProps) => {
+    export const dashboard = ({loaderData}: Route.ComponentProps) => {
 
-    const user = loaderData.user as User | null;
-    const {dashboardStats, allTrips, allUsers, userGrowth, tripsByTravelStyle} = loaderData;
+        const user = loaderData.user as User | null;
+        const {dashboardStats, allTrips, allUsers, userGrowth, tripsByTravelStyle} = loaderData;
+
+    const trips = allTrips.map((trip) => ({
+        imageUrl: trip.imageUrls[0],
+        name: trip.name,
+        interest: trip.interests,
+    }))
+
+    const usersAndTrips = [
+        {
+            title: 'Latest user signups',
+            dataSource: allUsers,
+            field: "count",
+            headerText: 'Trips created'
+        },
+        {
+            title: 'Trips based on interests',
+            dataSource: trips,
+            field: "interest",
+            headerText: 'Interest'
+        }
+    ]
 
   return (
     <main className='dashboard wrapper'>
@@ -159,7 +180,39 @@ const dashboard = ({loaderData}: Route.ComponentProps) => {
         </section>
 
         <section className='user-trip wrapper'>
-
+            {usersAndTrips.map(({title, dataSource, field, headerText}, i) => (
+                <div key={i} className='flex flex-col gap-5'>
+                    <h3 className='p-20-semibold text-dark-100'>{title}</h3>
+                    <GridComponent dataSource={dataSource} gridLines='None'>
+                        <ColumnsDirective>
+                            <ColumnDirective 
+                                field="name" 
+                                headerText="Name" 
+                                width="200" 
+                                textAlign='Left'
+                                template={(props: UserData) => (
+                                <div className='flex items-center gap-1.5 px-4'>
+                                    <img 
+                                    src={props.imageUrl} 
+                                    alt="user" 
+                                    className='rounded-full size-8 aspect-square' 
+                                    referrerPolicy='no-referrer'
+                                    />
+                                    <span>{props.name}</span>
+                                </div>
+                                )}
+                                
+                            />
+                            <ColumnDirective 
+                                field={field}
+                                headerText={headerText}
+                                width="150"
+                                textAlign='Left'
+                            />
+                        </ColumnsDirective>
+                     </GridComponent>
+                </div>
+            ))}
         </section>
     </main>
   )

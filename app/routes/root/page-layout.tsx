@@ -1,6 +1,9 @@
 import React from 'react'
 import { useNavigate } from 'react-router';
 import { logoutUser } from '~/appwrite/auth';
+import { TripCard } from '../../../components';
+import { allTrips } from '~/constants';
+import { ButtonComponent } from '@syncfusion/ej2-react-buttons';
 
 const pageLayout = () => {
     const navigate = useNavigate();
@@ -10,21 +13,44 @@ const pageLayout = () => {
            navigate("/sign-in")
     }
   return (
-    <div>
-        <button
-            onClick={() => handleLogout()}
-            className='cursor-pointer'
-        >
-            <img 
-                src="/assets/icons/logout.svg"
-                alt="logout"
-                className='size-6'
-                referrerPolicy='no-referrer'
+    <div className='mt-5'>
+        <div className='flex justify-end'>
+            <button
+                onClick={() => handleLogout()}
+                className='flex cursor-pointer gap-2 mb-5'
+            >
+                <img 
+                    src="/assets/icons/logout.svg"
+                    alt="logout"
+                    className='size-6'
+                    referrerPolicy='no-referrer'
                 />
-        </button>
-        <button onClick={() => {navigate('/dashboard')}}>
-            Dashboard
-        </button>
+                <span>Logout</span>
+            </button>
+        </div>
+
+        <ButtonComponent 
+            type="button" 
+            className="button-class !h-11 !w-full md:w-[240px] "
+            onClick={() => {navigate('/dashboard')}}
+            >
+                <img src="/assets/icons/plus.svg" alt="plus" className='size-5' />
+                <span className="p-16-semibold text-white">Go to Dashboard</span>
+        </ButtonComponent>
+    
+        <div>
+            {allTrips.map(({id,name, imageUrls,itinerary,travelStyle,estimatedPrice}) => (
+                <TripCard 
+                    key={id} 
+                    id={id.toString()} 
+                    name={name} 
+                    location={itinerary?.[0].location ?? []}
+                    imageUrl={imageUrls[0]}
+                    tags={[ travelStyle]}
+                    price={estimatedPrice}
+                />
+            ))}
+        </div>
     </div>
   )
 }

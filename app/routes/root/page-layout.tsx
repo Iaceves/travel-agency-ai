@@ -38,7 +38,7 @@ const pageLayout = () => {
                 <span className="p-16-semibold text-white">Go to Dashboard</span>
         </ButtonComponent>
     
-        <div>
+        <div className='ml-10 mr-10 grid grid-cols-1 lg:grid-cols-3 gap-5'>
             {allTrips.map(({id,name, imageUrls,itinerary,travelStyle,estimatedPrice}) => (
                 <TripCard 
                     key={id} 

@@ -8,7 +8,8 @@ const TripCard = ({id, name, imageUrl, location, price, tags}: TripCardProps) =>
     const path = useLocation();
   return (
     <Link 
-        to={path.pathname === "/" || path.pathname.startsWith("/travel") ? `/travel/${id}`: `/trips/${id}`}
+        // to={path.pathname === "/" || path.pathname.startsWith("/travel") ? `/travel/${id}`: `/trips/${id}`}
+        to={"/dashboard"}
         className='trip-card'
     >
         <img src={imageUrl} alt={name}/>

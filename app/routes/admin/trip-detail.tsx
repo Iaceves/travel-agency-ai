@@ -66,69 +66,69 @@ const tripDetail = ({loaderData}: Route.ComponentProps) => {
                     />
                     <InfoPill 
                         text={itinerary?.slice(0,4)
-                            .map((item) => item.location).join(", ") || ""
+                            .map((item: any) => item.location).join(", ") || ""
                         }
                         image="/assets/icons/location-mark.svg"
                     />
                 </div>
-            </header>
-            <section className="gallery">
-                {imageUrls.map((url: string, i: number) => (
-                    <img 
-                    src={url} 
-                    key={i} 
-                    className={cn('w-full rounded-xl object-cover', i === 0
-                        ? 'md:col-span-2 md:row-span-2 h-[330px]'
-                        : 'md:row-span-1 h-[150px]'
-                    )}
-                />
-                ))}
-            </section>
-            <section className="flex gap-3 md:gap-5 items-center flex-wrap">
-                <ChipListComponent id="travel-chip">
-                    <ChipsDirective>
-                        {pillItems.map((pill,i) => (
-                            <ChipDirective 
-                                key={i} 
-                                text={getFirstWord(pill.text)}
-                                cssClass={`${pill.bg} !text-base !font-medium !px-4`}
+        </header>
+        <section className="gallery">
+            {imageUrls.map((url: string, i: number) => (
+                <img 
+                src={url} 
+                key={i} 
+                className={cn('w-full rounded-xl object-cover', i === 0
+                    ? 'md:col-span-2 md:row-span-2 h-[330px]'
+                    : 'md:row-span-1 h-[150px]'
+                )}
+            />
+            ))}
+        </section>
+        <section className="flex gap-3 md:gap-5 items-center flex-wrap">
+            <ChipListComponent id="travel-chip">
+                <ChipsDirective>
+                    {pillItems.map((pill,i) => (
+                        <ChipDirective 
+                            key={i} 
+                            text={getFirstWord(pill.text)}
+                            cssClass={`${pill.bg} !text-base !font-medium !px-4`}
+                        />
+                    ))}
+                </ChipsDirective>
+            </ChipListComponent>
+            <ul className="flex gap-1 items-center">
+                    {Array.from({length: 5}).fill(null).map((_,index) => (
+                        <li key={index}>
+                            <img
+                                src="/assets/icons/star.svg" 
+                                alt="star" 
+                                className="size-[18px]"
                             />
-                        ))}
-                    </ChipsDirective>
-                </ChipListComponent>
-                <ul className="flex gap-1 items-center">
-                        {Array.from({length: 5}).fill(null).map((_,index) => (
-                            <li key={index}>
-                                <img
-                                    src="/assets/icons/star.svg" 
-                                    alt="star" 
-                                    className="size-[18px]"
-                                />
-                            </li>
-                        ))}
-                        <li className="ml-1">
-                            <ChipListComponent>
-                                <ChipsDirective>
-                                    <ChipDirective
-                                        text="4.9/5"
-                                        cssClass="!bg-yellow-50 !text-yellow-700"
-                                    />
-                                </ChipsDirective>
-                            </ChipListComponent>
                         </li>
-                    </ul>
-            </section>
-            <section className="title">
-                <article>
-                    <h3>
-                        {duration}-day {country} {travelStyle} Trip
-                    </h3>
-                    <p>
-                        {budget}, {groupType} and {interests}
-                    </p>
-                </article>
-                <h2>{estimatedPrice}</h2>
-            </section>
+                    ))}
+                    <li className="ml-1">
+                        <ChipListComponent>
+                            <ChipsDirective>
+                                <ChipDirective
+                                    text="4.9/5"
+                                    cssClass="!bg-yellow-50 !text-yellow-700"
+                                />
+                            </ChipsDirective>
+                        </ChipListComponent>
+                    </li>
+                </ul>
+        </section>
+        <section className="title">
+            <article>
+                <h3>
+                    {duration}-day {country} {travelStyle} Trip
+                </h3>
+                <p>
+                    {budget}, {groupType} and {interests}
+                </p>
+            </article>
+            <h2>{estimatedPrice}</h2>
+        </section>
             <p className="text-sm md:text-lg font-normal text-dark-400">{description}</p>
             <ul className="itinerary">
                 {itinerary?.map((dayPlan: DayPlan, index: number) => (
@@ -152,7 +152,7 @@ const tripDetail = ({loaderData}: Route.ComponentProps) => {
                     <div>
                         <h3>{section.title}</h3>
                         <ul>
-                            {section.items?.map((item) => (
+                            {section.items?.map((item: any) => (
                                 <li key={item}>
                                     <p className="flex-grow">{item}</p>
                                 </li>
